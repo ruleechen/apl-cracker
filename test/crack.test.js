@@ -8,12 +8,12 @@ const crack = require("../src/crack");
 
 const materials = [
   {
-    brick: "./materials/brick1.txt",
-    ground: "./materials/ground1.txt",
+    brick: "./materials/sample1/data-brick.txt",
+    ground: "./materials/sample1/data-ground.txt",
   },
   {
-    brick: "./materials/brick2.txt",
-    ground: "./materials/ground2.txt",
+    brick: "./materials/sample2/data-brick.txt",
+    ground: "./materials/sample2/data-ground.txt",
   },
 ];
 
