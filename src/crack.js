@@ -51,7 +51,7 @@ const crack = async ({ groundDataString, brickDataString }) => {
 
   // border pixels of brick
   const brick = await Jimp.read(brickBuf);
-  // brick.write(path.resolve(__dirname, "../test/materials/brick.jpg"));
+  // brick.write(path.resolve(__dirname, "../test/materials/brick.png"));
   const brickWidth = brick.getWidth();
   const brickHeight = brick.getHeight();
   const borderPixels = [];
@@ -92,7 +92,7 @@ const crack = async ({ groundDataString, brickDataString }) => {
 
   // all pixels of ground
   const ground = await Jimp.read(groundBuf);
-  // ground.write(path.resolve(__dirname, "../test/materials/ground.jpg"));
+  // ground.write(path.resolve(__dirname, "../test/materials/ground.png"));
   const groundWidth = ground.getWidth();
   const groundHeight = ground.getHeight();
   const groundPixels = {};
