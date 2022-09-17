@@ -49,12 +49,14 @@ const crack = async ({ groundDataString, brickDataString }) => {
     brickBuf = Buffer.from(brickDataString, "base64");
   }
 
+  const testColor = Jimp.cssColorToHex("#FF0000");
+
   // border pixels of brick
   const brick = await Jimp.read(brickBuf);
-  // brick.write(path.resolve(__dirname, "../test/materials/brick.png"));
   const brickWidth = brick.getWidth();
   const brickHeight = brick.getHeight();
   const borderPixels = [];
+  // scan x
   for (let brickX = 0; brickX < brickWidth; brickX++) {
     const yPixels = [];
     for (let brickY = 0; brickY < brickHeight; brickY++) {
@@ -86,6 +88,7 @@ const crack = async ({ groundDataString, brickDataString }) => {
       });
     }
   }
+  // scan y
   for (let brickY = 0; brickY < brickHeight; brickY++) {
     const xPixels = [];
     for (let brickX = 0; brickX < brickHeight; brickX++) {
@@ -119,20 +122,24 @@ const crack = async ({ groundDataString, brickDataString }) => {
   }
 
   // borderPixels.forEach(({ x, y }) => {
-  //   brick.setPixelColor(Jimp.cssColorToHex("#FF0000"), x, y);
+  //   brick.setPixelColor(testColor, x, y);
   // });
+
   // brick.write(path.resolve(__dirname, "../test/materials/brick.png"));
 
   const minBrickX = borderPixels.reduce((prev, curr) => {
     return prev.x < curr.x ? prev : curr;
   }).x;
+  const maxBrickX = borderPixels.reduce((prev, curr) => {
+    return prev.x > curr.x ? prev : curr;
+  }).x;
   const minBrickY = borderPixels.reduce((prev, curr) => {
     return prev.y < curr.y ? prev : curr;
   }).y;
+  const realBrickWidth = maxBrickX - minBrickX + 1;
 
   // all pixels of ground
   const ground = await Jimp.read(groundBuf);
-  // ground.write(path.resolve(__dirname, "../test/materials/ground.png"));
   const groundWidth = ground.getWidth();
   const groundHeight = ground.getHeight();
   const groundPixels = {};
@@ -146,23 +153,77 @@ const crack = async ({ groundDataString, brickDataString }) => {
 
   // do comparison
   const compares = [];
-  for (let groundX = 0; groundX < groundWidth - brickWidth; groundX++) {
+  for (let groundX = 0; groundX < groundWidth - realBrickWidth; groundX++) {
     const diffs = [];
     borderPixels.forEach(({ x, y, color }) => {
-      const groundColor = groundPixels[groundX + x][y];
-      const redDiff = color.r - groundColor.r;
-      const greenDiff = color.g - groundColor.g;
-      const blueDiff = color.b - groundColor.b;
-      diffs.push((redDiff + greenDiff + blueDiff) / 3);
+      const gx = groundX + x - minBrickX;
+      const centerColor = groundPixels[gx][y];
+      let roundColors = [];
+      if (gx > 0) {
+        // left
+        roundColors.push({
+          gx: gx - 1,
+          gy: y,
+          color: groundPixels[gx - 1][y],
+        });
+      }
+      if (y > 0) {
+        // top
+        roundColors.push({
+          gx,
+          gy: y - 1,
+          color: groundPixels[gx][y - 1],
+        });
+      }
+      // right
+      if (gx < groundWidth - 1) {
+        roundColors.push({
+          gx: gx + 1,
+          gy: y,
+          color: groundPixels[gx + 1][y],
+        });
+      }
+      // bottom
+      if (y < groundHeight - 1) {
+        roundColors.push({
+          gx,
+          gy: y + 1,
+          color: groundPixels[gx][y + 1],
+        });
+      }
+      // diff
+      if (roundColors.length) {
+        roundColors = roundColors.map(({ gx, gy, color }) => {
+          const redDiff = color.r - centerColor.r;
+          const greenDiff = color.g - centerColor.g;
+          const blueDiff = color.b - centerColor.b;
+          const diff = (redDiff + greenDiff + blueDiff) / 3;
+          return {
+            gx,
+            gy,
+            color,
+            diff,
+          };
+        });
+        const maxDiff = roundColors.reduce((prev, curr) => {
+          return prev.diff > curr.diff ? prev : curr;
+        });
+        if (maxDiff) {
+          diffs.push(maxDiff.diff);
+          // ground.setPixelColor(testColor, maxDiff.gx, maxDiff.gy);
+        }
+      }
     });
     const total = diffs.reduce((prev, curr) => prev + curr, 0);
     const average = total / diffs.length;
-    const confidence = 1 - average / 255;
+    const confidence = average / 255;
     compares.push({
       groundX,
       confidence,
     });
   }
+
+  // ground.write(path.resolve(__dirname, "../test/materials/ground.png"));
 
   // the best confidence
   let best;
@@ -180,7 +241,7 @@ const crack = async ({ groundDataString, brickDataString }) => {
   }
   return {
     confidence: round(best.confidence, 4),
-    x: best.groundX + minBrickX,
+    x: best.groundX,
     y: minBrickY,
   };
 };
