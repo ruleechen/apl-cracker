@@ -60,10 +60,13 @@ const crack = async ({ groundDataString, brickDataString }) => {
     for (let brickY = 0; brickY < brickHeight; brickY++) {
       const color = brick.getPixelColor(brickX, brickY);
       if (color) {
-        yPixels.push({
-          brickY,
-          color: toRGB(color),
-        });
+        const rgb = toRGB(color);
+        if (rgb.r > 5 && rgb.g > 5 && rgb.b > 5) {
+          yPixels.push({
+            brickY,
+            color: rgb,
+          });
+        }
       }
     }
     if (yPixels.length > 0) {
