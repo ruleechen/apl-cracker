@@ -86,6 +86,43 @@ const crack = async ({ groundDataString, brickDataString }) => {
       });
     }
   }
+  for (let brickY = 0; brickY < brickHeight; brickY++) {
+    const xPixels = [];
+    for (let brickX = 0; brickX < brickHeight; brickX++) {
+      const color = brick.getPixelColor(brickX, brickY);
+      if (color) {
+        const rgb = toRGB(color);
+        if (rgb.r > 5 && rgb.g > 5 && rgb.b > 5) {
+          xPixels.push({
+            brickX,
+            color: rgb,
+          });
+        }
+      }
+    }
+    if (xPixels.length > 0) {
+      const pixel = xPixels[0];
+      borderPixels.push({
+        x: pixel.brickX,
+        y: brickY,
+        color: pixel.color,
+      });
+    }
+    if (xPixels.length > 1) {
+      const pixel = xPixels[xPixels.length - 1];
+      borderPixels.push({
+        x: pixel.brickX,
+        y: brickY,
+        color: pixel.color,
+      });
+    }
+  }
+
+  // borderPixels.forEach(({ x, y }) => {
+  //   brick.setPixelColor(Jimp.cssColorToHex("#FF0000"), x, y);
+  // });
+  // brick.write(path.resolve(__dirname, "../test/materials/brick.png"));
+
   const minBrickX = borderPixels.reduce((prev, curr) => {
     return prev.x < curr.x ? prev : curr;
   }).x;
