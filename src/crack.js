@@ -34,7 +34,12 @@ const round = (number, decimals) => {
   return Math.round(number * scale) / scale;
 };
 
-const crack = async ({ groundDataString, brickDataString }) => {
+const crack = async ({
+  groundDataString,
+  brickDataString,
+  deserializeTo,
+  borderColor,
+}) => {
   let groundBuf;
   try {
     groundBuf = decodeBase64DataUri(groundDataString).buffer;
@@ -49,7 +54,9 @@ const crack = async ({ groundDataString, brickDataString }) => {
     brickBuf = Buffer.from(brickDataString, "base64");
   }
 
-  const testColor = Jimp.cssColorToHex("#FF0000");
+  if (borderColor) {
+    borderColor = Jimp.cssColorToHex(borderColor);
+  }
 
   // border pixels of brick
   const brick = await Jimp.read(brickBuf);
@@ -121,11 +128,15 @@ const crack = async ({ groundDataString, brickDataString }) => {
     }
   }
 
-  // borderPixels.forEach(({ x, y }) => {
-  //   brick.setPixelColor(testColor, x, y);
-  // });
+  if (borderColor) {
+    borderPixels.forEach(({ x, y }) => {
+      brick.setPixelColor(borderColor, x, y);
+    });
+  }
 
-  // brick.write(path.resolve(__dirname, "../test/materials/brick.png"));
+  if (deserializeTo) {
+    brick.write(path.resolve(deserializeTo, "temp_brick.png"));
+  }
 
   const minBrickX = borderPixels.reduce((prev, curr) => {
     return prev.x < curr.x ? prev : curr;
@@ -153,7 +164,7 @@ const crack = async ({ groundDataString, brickDataString }) => {
 
   // do comparison
   const compares = [];
-  for (let groundX = 0; groundX < groundWidth - realBrickWidth; groundX++) {
+  for (let groundX = 121; groundX < 122; groundX++) {
     const diffs = [];
     borderPixels.forEach(({ x, y, color }) => {
       const gx = groundX + x - minBrickX;
@@ -194,9 +205,9 @@ const crack = async ({ groundDataString, brickDataString }) => {
       // diff
       if (roundColors.length) {
         roundColors = roundColors.map(({ gx, gy, color }) => {
-          const redDiff = color.r - centerColor.r;
-          const greenDiff = color.g - centerColor.g;
-          const blueDiff = color.b - centerColor.b;
+          const redDiff = Math.abs(color.r - centerColor.r);
+          const greenDiff = Math.abs(color.g - centerColor.g);
+          const blueDiff = Math.abs(color.b - centerColor.b);
           const diff = (redDiff + greenDiff + blueDiff) / 3;
           return {
             gx,
@@ -210,7 +221,9 @@ const crack = async ({ groundDataString, brickDataString }) => {
         });
         if (maxDiff) {
           diffs.push(maxDiff.diff);
-          // ground.setPixelColor(testColor, maxDiff.gx, maxDiff.gy);
+          if (borderColor) {
+            ground.setPixelColor(borderColor, maxDiff.gx, maxDiff.gy);
+          }
         }
       }
     });
@@ -223,7 +236,9 @@ const crack = async ({ groundDataString, brickDataString }) => {
     });
   }
 
-  // ground.write(path.resolve(__dirname, "../test/materials/ground.png"));
+  if (deserializeTo) {
+    ground.write(path.resolve(deserializeTo, "temp_ground.png"));
+  }
 
   // the best confidence
   let best;
