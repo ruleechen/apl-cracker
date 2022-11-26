@@ -7,14 +7,14 @@ const path = require("path");
 const crack = require("../src/crack");
 
 const materials = [
-  "sample1",
-  "sample2",
-  "sample3",
-  "sample4",
-  "sample5",
-  "sample6",
-  "20221125-1",
-  "20221125-2",
+  // "sample1",
+  // "sample2",
+  // "sample3",
+  // "sample4",
+  // "sample5",
+  // "sample6",
+  // "20221125-1",
+  // "20221125-2",
   "20221125-3",
   "20221125-4",
 ];

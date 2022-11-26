@@ -164,7 +164,7 @@ const crack = async ({
 
   // do comparison
   const compares = [];
-  for (let groundX = 121; groundX < 122; groundX++) {
+  for (let groundX = 0; groundX < groundWidth - realBrickWidth; groundX++) {
     const diffs = [];
     borderPixels.forEach(({ x, y, color }) => {
       const gx = groundX + x - minBrickX;
@@ -221,9 +221,6 @@ const crack = async ({
         });
         if (maxDiff) {
           diffs.push(maxDiff.diff);
-          if (borderColor) {
-            ground.setPixelColor(borderColor, maxDiff.gx, maxDiff.gy);
-          }
         }
       }
     });
@@ -236,16 +233,22 @@ const crack = async ({
     });
   }
 
-  if (deserializeTo) {
-    ground.write(path.resolve(deserializeTo, "temp_ground.png"));
-  }
-
   // the best confidence
   let best;
   if (compares.length > 0) {
     best = compares.reduce((prev, curr) => {
       return prev.confidence > curr.confidence ? prev : curr;
     });
+  }
+
+  if (best && borderColor) {
+    borderPixels.forEach(({ x, y }) => {
+      ground.setPixelColor(borderColor, best.groundX + x - minBrickX, y);
+    });
+  }
+
+  if (deserializeTo) {
+    ground.write(path.resolve(deserializeTo, "temp_ground.png"));
   }
 
   // done
