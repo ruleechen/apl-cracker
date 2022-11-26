@@ -13,6 +13,10 @@ const materials = [
   "sample4",
   "sample5",
   "sample6",
+  "20221125-1",
+  "20221125-2",
+  "20221125-3",
+  "20221125-4",
 ];
 
 materials.forEach((folder) => {
