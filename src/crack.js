@@ -180,72 +180,51 @@ const crack = async ({
   // do comparison
   const compares = [];
   for (let groundX = 0; groundX < groundWidth - realBrickWidth; groundX++) {
-    const diffs = [];
+    let pairs = [];
     borderPixels.forEach(({ x, y, position }) => {
       const gx = groundX + x - minBrickX;
-      const centerColor = groundPixels[gx][y];
-      let roundColors = [];
+      const gc = groundPixels[gx][y];
+      const origin = { gx, gy: y, color: gc };
       if (position === borderPosition.left) {
+        if (gx > 0) {
+          pairs.push({
+            origin,
+            compare: { gx: gx - 1, gy: y, color: groundPixels[gx - 1][y] },
+          });
+        }
       } else if (position === borderPosition.right) {
+        if (gx < groundWidth - 1) {
+          pairs.push({
+            origin,
+            compare: { gx: gx + 1, gy: y, color: groundPixels[gx + 1][y] },
+          });
+        }
       } else if (position === borderPosition.top) {
+        if (y > 0) {
+          pairs.push({
+            origin,
+            compare: { gx, gy: y - 1, color: groundPixels[gx][y - 1] },
+          });
+        }
       } else if (position === borderPosition.bottom) {
-      }
-      if (gx > 0) {
-        // left
-        roundColors.push({
-          gx: gx - 1,
-          gy: y,
-          color: groundPixels[gx - 1][y],
-        });
-      }
-      if (y > 0) {
-        // top
-        roundColors.push({
-          gx,
-          gy: y - 1,
-          color: groundPixels[gx][y - 1],
-        });
-      }
-      // right
-      if (gx < groundWidth - 1) {
-        roundColors.push({
-          gx: gx + 1,
-          gy: y,
-          color: groundPixels[gx + 1][y],
-        });
-      }
-      // bottom
-      if (y < groundHeight - 1) {
-        roundColors.push({
-          gx,
-          gy: y + 1,
-          color: groundPixels[gx][y + 1],
-        });
-      }
-      // diff
-      if (roundColors.length) {
-        roundColors = roundColors.map(({ gx, gy, color }) => {
-          const redDiff = Math.abs(color.r - centerColor.r);
-          const greenDiff = Math.abs(color.g - centerColor.g);
-          const blueDiff = Math.abs(color.b - centerColor.b);
-          const diff = (redDiff + greenDiff + blueDiff) / 3;
-          return {
-            gx,
-            gy,
-            color,
-            diff,
-          };
-        });
-        const maxDiff = roundColors.reduce((prev, curr) => {
-          return prev.diff > curr.diff ? prev : curr;
-        });
-        if (maxDiff) {
-          diffs.push(maxDiff.diff);
+        if (y < groundHeight - 1) {
+          pairs.push({
+            origin,
+            compare: { gx, gy: y + 1, color: groundPixels[gx][y + 1] },
+          });
         }
       }
     });
-    const total = diffs.reduce((prev, curr) => prev + curr, 0);
-    const average = total / diffs.length;
+
+    let total = 0;
+    pairs.forEach(({ origin, compare }) => {
+      const redDiff = Math.abs(origin.color.r - compare.color.r);
+      const greenDiff = Math.abs(origin.color.g - compare.color.g);
+      const blueDiff = Math.abs(origin.color.b - compare.color.b);
+      total += (redDiff + greenDiff + blueDiff) / 3;
+    });
+
+    const average = total / pairs.length;
     const confidence = average / 255;
     compares.push({
       groundX,
