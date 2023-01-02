@@ -51,6 +51,7 @@ const round = (number, decimals) => {
 const crack = async ({
   groundDataString,
   brickDataString,
+  searchDistance = 2,
   deserializeTo,
   colorBorder,
 }) => {
@@ -66,6 +67,10 @@ const crack = async ({
     brickBuf = decodeBase64DataUri(brickDataString).buffer;
   } catch (ex) {
     brickBuf = Buffer.from(brickDataString, "base64");
+  }
+
+  if (searchDistance < 1) {
+    throw new Error('"searchDistance" should greater than 0');
   }
 
   // border pixels of brick
@@ -185,50 +190,66 @@ const crack = async ({
       const gx = groundX + x - minBrickX;
       const gc = groundPixels[gx][y];
       const origin = { gx, gy: y, color: gc };
-      if (position === borderPosition.left) {
-        if (gx > 0) {
-          pairs.push({
-            position,
-            origin,
-            compare: { gx: gx - 1, gy: y, color: groundPixels[gx - 1][y] },
-          });
-        }
-      } else if (position === borderPosition.right) {
-        if (gx < groundWidth - 1) {
-          pairs.push({
-            position,
-            origin,
-            compare: { gx: gx + 1, gy: y, color: groundPixels[gx + 1][y] },
-          });
-        }
-      } else if (position === borderPosition.top) {
-        if (y > 0) {
-          pairs.push({
-            position,
-            origin,
-            compare: { gx, gy: y - 1, color: groundPixels[gx][y - 1] },
-          });
-        }
-      } else if (position === borderPosition.bottom) {
-        if (y < groundHeight - 1) {
-          pairs.push({
-            position,
-            origin,
-            compare: { gx, gy: y + 1, color: groundPixels[gx][y + 1] },
-          });
+      const contrasts = [];
+      for (let distance = 1; distance <= searchDistance; distance++) {
+        if (position === borderPosition.left) {
+          const contrastX = gx - distance;
+          if (contrastX >= 0) {
+            contrasts.push({
+              gx: contrastX,
+              gy: y,
+              color: groundPixels[contrastX][y],
+            });
+          }
+        } else if (position === borderPosition.right) {
+          const contrastX = gx + distance;
+          if (contrastX <= groundWidth - 1) {
+            contrasts.push({
+              gx: contrastX,
+              gy: y,
+              color: groundPixels[contrastX][y],
+            });
+          }
+        } else if (position === borderPosition.top) {
+          const contrastY = y - distance;
+          if (contrastY >= 0) {
+            contrasts.push({
+              gx,
+              gy: contrastY,
+              color: groundPixels[gx][contrastY],
+            });
+          }
+        } else if (position === borderPosition.bottom) {
+          const contrastY = y + distance;
+          if (contrastY <= groundHeight - 1) {
+            contrasts.push({
+              gx,
+              gy: contrastY,
+              color: groundPixels[gx][contrastY],
+            });
+          }
         }
       }
+      pairs.push({
+        position,
+        origin,
+        contrasts,
+      });
     });
 
-    let total = 0;
-    pairs.forEach(({ origin, compare }) => {
-      const redDiff = Math.abs(origin.color.r - compare.color.r);
-      const greenDiff = Math.abs(origin.color.g - compare.color.g);
-      const blueDiff = Math.abs(origin.color.b - compare.color.b);
-      total += (redDiff + greenDiff + blueDiff) / 3;
+    let totalDiff = 0;
+    let totalCount = 0;
+    pairs.forEach(({ origin, contrasts }) => {
+      contrasts.forEach((contrast) => {
+        const redDiff = Math.abs(origin.color.r - contrast.color.r);
+        const greenDiff = Math.abs(origin.color.g - contrast.color.g);
+        const blueDiff = Math.abs(origin.color.b - contrast.color.b);
+        totalDiff += (redDiff + greenDiff + blueDiff) / 3;
+        totalCount += 1;
+      });
     });
 
-    const average = total / pairs.length;
+    const average = totalDiff / totalCount;
     const confidence = average / 255;
     compares.push({
       groundX,
@@ -246,10 +267,12 @@ const crack = async ({
   }
 
   if (best && colorBorder) {
-    best.pairs.forEach(({ position, origin, compare }) => {
+    best.pairs.forEach(({ position, origin, contrasts }) => {
       const color = borderColors[position];
       ground.setPixelColor(color, origin.gx, origin.gy);
-      ground.setPixelColor(color, compare.gx, compare.gy);
+      contrasts.forEach((contrast) => {
+        ground.setPixelColor(color, contrast.gx, contrast.gy);
+      });
     });
   }
 
