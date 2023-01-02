@@ -249,7 +249,7 @@ const crack = async ({
       });
     });
 
-    const average = totalDiff / totalCount;
+    const average = totalCount > 0 ? totalDiff / totalCount : 0;
     const confidence = average / 255;
     compares.push({
       groundX,
