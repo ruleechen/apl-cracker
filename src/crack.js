@@ -188,6 +188,7 @@ const crack = async ({
       if (position === borderPosition.left) {
         if (gx > 0) {
           pairs.push({
+            position,
             origin,
             compare: { gx: gx - 1, gy: y, color: groundPixels[gx - 1][y] },
           });
@@ -195,6 +196,7 @@ const crack = async ({
       } else if (position === borderPosition.right) {
         if (gx < groundWidth - 1) {
           pairs.push({
+            position,
             origin,
             compare: { gx: gx + 1, gy: y, color: groundPixels[gx + 1][y] },
           });
@@ -202,6 +204,7 @@ const crack = async ({
       } else if (position === borderPosition.top) {
         if (y > 0) {
           pairs.push({
+            position,
             origin,
             compare: { gx, gy: y - 1, color: groundPixels[gx][y - 1] },
           });
@@ -209,6 +212,7 @@ const crack = async ({
       } else if (position === borderPosition.bottom) {
         if (y < groundHeight - 1) {
           pairs.push({
+            position,
             origin,
             compare: { gx, gy: y + 1, color: groundPixels[gx][y + 1] },
           });
@@ -229,6 +233,7 @@ const crack = async ({
     compares.push({
       groundX,
       confidence,
+      pairs,
     });
   }
 
@@ -241,9 +246,10 @@ const crack = async ({
   }
 
   if (best && colorBorder) {
-    borderPixels.forEach(({ x, y, position }) => {
+    best.pairs.forEach(({ position, origin, compare }) => {
       const color = borderColors[position];
-      ground.setPixelColor(color, best.groundX + x - minBrickX, y);
+      ground.setPixelColor(color, origin.gx, origin.gy);
+      ground.setPixelColor(color, compare.gx, compare.gy);
     });
   }
 
