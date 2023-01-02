@@ -5,6 +5,20 @@
 const path = require("path");
 const Jimp = require("jimp");
 
+const borderPosition = {
+  top: "top",
+  right: "right",
+  bottom: "bottom",
+  left: "left",
+};
+
+const borderColors = {
+  top: Jimp.cssColorToHex("#FF0000"),
+  right: Jimp.cssColorToHex("#00ff00"),
+  bottom: Jimp.cssColorToHex("#0000ff"),
+  left: Jimp.cssColorToHex("#00ffff"),
+};
+
 const decodeBase64DataUri = (dataString) => {
   const matches = dataString.match(/^data:([^;]+);([^,]+),(.+)$/);
   const type = matches[1];
@@ -38,7 +52,7 @@ const crack = async ({
   groundDataString,
   brickDataString,
   deserializeTo,
-  borderColor,
+  colorBorder,
 }) => {
   let groundBuf;
   try {
@@ -52,10 +66,6 @@ const crack = async ({
     brickBuf = decodeBase64DataUri(brickDataString).buffer;
   } catch (ex) {
     brickBuf = Buffer.from(brickDataString, "base64");
-  }
-
-  if (borderColor) {
-    borderColor = Jimp.cssColorToHex(borderColor);
   }
 
   // border pixels of brick
@@ -84,6 +94,7 @@ const crack = async ({
         x: brickX,
         y: pixel.brickY,
         color: pixel.color,
+        position: borderPosition.top,
       });
     }
     if (yPixels.length > 1) {
@@ -92,6 +103,7 @@ const crack = async ({
         x: brickX,
         y: pixel.brickY,
         color: pixel.color,
+        position: borderPosition.bottom,
       });
     }
   }
@@ -116,6 +128,7 @@ const crack = async ({
         x: pixel.brickX,
         y: brickY,
         color: pixel.color,
+        position: borderPosition.left,
       });
     }
     if (xPixels.length > 1) {
@@ -124,13 +137,15 @@ const crack = async ({
         x: pixel.brickX,
         y: brickY,
         color: pixel.color,
+        position: borderPosition.right,
       });
     }
   }
 
-  if (borderColor) {
-    borderPixels.forEach(({ x, y }) => {
-      brick.setPixelColor(borderColor, x, y);
+  if (colorBorder) {
+    borderPixels.forEach(({ x, y, position }) => {
+      const color = borderColors[position];
+      brick.setPixelColor(color, x, y);
     });
   }
 
@@ -166,10 +181,15 @@ const crack = async ({
   const compares = [];
   for (let groundX = 0; groundX < groundWidth - realBrickWidth; groundX++) {
     const diffs = [];
-    borderPixels.forEach(({ x, y, color }) => {
+    borderPixels.forEach(({ x, y, position }) => {
       const gx = groundX + x - minBrickX;
       const centerColor = groundPixels[gx][y];
       let roundColors = [];
+      if (position === borderPosition.left) {
+      } else if (position === borderPosition.right) {
+      } else if (position === borderPosition.top) {
+      } else if (position === borderPosition.bottom) {
+      }
       if (gx > 0) {
         // left
         roundColors.push({
@@ -241,9 +261,10 @@ const crack = async ({
     });
   }
 
-  if (best && borderColor) {
-    borderPixels.forEach(({ x, y }) => {
-      ground.setPixelColor(borderColor, best.groundX + x - minBrickX, y);
+  if (best && colorBorder) {
+    borderPixels.forEach(({ x, y, position }) => {
+      const color = borderColors[position];
+      ground.setPixelColor(color, best.groundX + x - minBrickX, y);
     });
   }
 

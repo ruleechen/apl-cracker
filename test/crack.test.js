@@ -23,7 +23,7 @@ materials.forEach((folder) => {
   const brick = `./materials/${folder}/data-brick.txt`;
   const ground = `./materials/${folder}/data-ground.txt`;
   const deserializeTo = path.resolve(__dirname, "materials", folder);
-  const borderColor = "#FF0000";
+  const colorBorder = true;
 
   const groundDataString = fs.readFileSync(
     path.resolve(__dirname, ground),
@@ -39,7 +39,7 @@ materials.forEach((folder) => {
     groundDataString,
     brickDataString,
     deserializeTo,
-    borderColor,
+    colorBorder,
   }).then((left) => {
     console.log(left);
   });
