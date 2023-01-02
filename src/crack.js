@@ -19,6 +19,13 @@ const borderColors = {
   left: Jimp.cssColorToHex("#00ffff"),
 };
 
+const contrastColors = {
+  top: Jimp.cssColorToHex("#FF6464"),
+  right: Jimp.cssColorToHex("#96fd96"),
+  bottom: Jimp.cssColorToHex("#6464ff"),
+  left: Jimp.cssColorToHex("#96ffff"),
+};
+
 const decodeBase64DataUri = (dataString) => {
   const matches = dataString.match(/^data:([^;]+);([^,]+),(.+)$/);
   const type = matches[1];
@@ -268,10 +275,11 @@ const crack = async ({
 
   if (best && colorBorder) {
     best.pairs.forEach(({ position, origin, contrasts }) => {
-      const color = borderColors[position];
-      ground.setPixelColor(color, origin.gx, origin.gy);
+      const originColor = borderColors[position];
+      const contrastColor = contrastColors[position];
+      ground.setPixelColor(originColor, origin.gx, origin.gy);
       contrasts.forEach((contrast) => {
-        ground.setPixelColor(color, contrast.gx, contrast.gy);
+        ground.setPixelColor(contrastColor, contrast.gx, contrast.gy);
       });
     });
   }
